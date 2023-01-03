@@ -10,6 +10,7 @@
 #include <sys/epoll.h>
 #include <unordered_map>
 #include <unistd.h>
+#include "thread_pool.h"
 
 sig_atomic_t g_flag = 0;
 std::unordered_map<int,Connection> g_connections;
@@ -17,6 +18,45 @@ std::unordered_map<int,Connection> g_connections;
 void signalHandle(int no)
 {
     g_flag = 0; 
+}
+
+void dealRead(int epoll_fd,Connection& connection)
+{
+    connection.read();
+    epoll_event ev;
+    ev.data.fd = connection.getFD();
+    if(connection.process())
+    {
+        ev.events = EPOLLOUT;
+    }else
+    {
+        ev.events = EPOLLIN;
+    }
+    epoll_ctl(epoll_fd,EPOLL_CTL_MOD,connection.getFD(),&ev);
+}
+
+void dealWrite(int epoll_fd,Connection& connection)
+{
+    size_t writed = connection.write();
+    if(writed == 0)
+    {
+        epoll_event ev;
+        ev.data.fd = connection.getFD();
+        if(connection.process())
+        {
+            ev.events = EPOLLOUT;
+        }else
+        {
+            ev.events = EPOLLIN;
+        }
+        epoll_ctl(epoll_fd,EPOLL_CTL_MOD,connection.getFD(),&ev);
+    }else if(writed < 0 && errno == EAGAIN)
+    {
+        epoll_event ev;
+        ev.data.fd = connection.getFD();
+        ev.events = EPOLLOUT;
+        epoll_ctl(epoll_fd,EPOLL_CTL_MOD,connection.getFD(),&ev);
+    }
 }
 
 int main()
@@ -85,11 +125,11 @@ int main()
             {
                 //g_connections
                 Connection client =  g_connections.at(events[i].data.fd);
-                client.read();
+                ThreadPool::getInstace()->addWork(std::bind(&dealRead,epoll_fd,client));
             }else if(events[i].events == EPOLLOUT)
             {
                 Connection client =  g_connections.at(events[i].data.fd);
-                client.write();
+                ThreadPool::getInstace()->addWork(std::bind(&dealWrite,epoll_fd,client));
                 //write data
             }
         }

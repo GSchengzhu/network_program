@@ -2,11 +2,10 @@
 
 ThreadPool* ThreadPool::m_instace = nullptr;
 ThreadPool* ThreadPool::getInstace()
-{
+{ 
     static std::once_flag flag;
     std::call_once(flag,[&]{
         m_instace = new ThreadPool();
-        printf("inininininin\n");
     });
 
     return m_instace;
@@ -20,6 +19,11 @@ ThreadPool::ThreadPool(int thread_nums)
         std::thread tmpThread(std::bind(&ThreadPool::work,this));
         tmpThread.detach();
     }
+}
+
+ThreadPool::~ThreadPool()
+{
+    m_runflag = false;
 }
 
 void ThreadPool::work()

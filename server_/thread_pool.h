@@ -11,6 +11,7 @@ class ThreadPool
 {
 public:
     static ThreadPool* getInstace();
+    ~ThreadPool();
 
     template<class F>
     void addWork(F&& task)

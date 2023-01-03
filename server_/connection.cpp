@@ -20,3 +20,8 @@
  {
     return m_outputBuffer.writeDataToFD(m_sockfd);
  }
+
+ bool Connection::process()
+ {
+    return true;
+ }
