@@ -69,3 +69,13 @@ size_t DataBuffer::writeDataToFD(int fd)
     m_readPos += writen;
     return writen;
 }
+
+const char *DataBuffer::readableData()
+{
+    return &(*m_buffer.begin())+ m_readPos;
+}
+
+size_t DataBuffer::readableDataLength()
+{
+    return m_writePos-m_readPos;
+}

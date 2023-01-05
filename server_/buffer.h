@@ -11,6 +11,9 @@ public:
     size_t readDataFromFD(int fd);
     size_t writeDataToFD(int fd);
 
+    size_t readableDataLength();
+    const char* readableData();
+
 private:
     void append(const char* appendData,int length);
 
